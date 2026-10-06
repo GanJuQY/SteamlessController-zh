@@ -1,0 +1,36 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mingw-x86_64:
+    name: 交叉编译（MinGW-w64）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 装工具链
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++-mingw-w64-x86-64 mingw-w64-tools
+
+      - name: 拉上游 main + 打补丁 + 交叉编译
+        run: WORK="$PWD/.work" bash scripts/mingw-build.sh
+
+      - name: 校验值
+        run: sha256sum .work/out/SteamlessController.exe .work/out/WebView2Loader.dll
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SteamlessController-zh-CN
+          if-no-files-found: error
+          path: |
+            .work/out/SteamlessController.exe
+            .work/out/WebView2Loader.dll
