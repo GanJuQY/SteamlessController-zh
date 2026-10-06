@@ -1,0 +1,24 @@
+# 构建产物、临时目录
+.work/
+build/
+out/
+work/
+*.obj
+*.o
+*.res
+
+# 二进制不进仓库（放 Release）
+*.exe
+*.dll
+
+# 编辑器
+.vs/
+.vscode/
+.idea/
+*.user
+
+# 系统
+Thumbs.db
+.DS_Store
+node_modules/
+node_modules.orig/

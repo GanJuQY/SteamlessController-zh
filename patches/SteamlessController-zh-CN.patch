@@ -1,0 +1,946 @@
+diff --git a/src/app/RemapWindow.cpp b/src/app/RemapWindow.cpp
+index 49c1dbd..5b69c57 100644
+--- a/src/app/RemapWindow.cpp
++++ b/src/app/RemapWindow.cpp
+@@ -34,7 +34,7 @@ static const std::wstring& GetHtml() {
+     static const std::wstring html = []() -> std::wstring {
+         static const char kHtml[] = R"HTML(
+ <!DOCTYPE html>
+-<html lang="en">
++<html lang="zh-CN">
+ <head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+@@ -44,8 +44,8 @@ static const std::wstring& GetHtml() {
+ <style>
+ *,*::before,*::after{box-sizing:border-box;}
+ html,body{margin:0;padding:0;height:100%;overflow:hidden;}
+-body{font-family:'Barlow',system-ui,sans-serif;background:linear-gradient(180deg,#1b2838 0%,#15202c 100%);color:#fff;display:flex;flex-direction:column;height:100%;}
+-button{font-family:'Barlow',system-ui,sans-serif;cursor:pointer;border:none;background:none;}
++body{font-family:'Barlow','Microsoft YaHei UI','Noto Sans SC',system-ui,sans-serif;background:linear-gradient(180deg,#1b2838 0%,#15202c 100%);color:#fff;display:flex;flex-direction:column;height:100%;}
++button{font-family:'Barlow','Microsoft YaHei UI','Noto Sans SC',system-ui,sans-serif;cursor:pointer;border:none;background:none;}
+ @keyframes scPulse{0%,100%{opacity:.4;transform:scale(.85);}50%{opacity:1;transform:scale(1.2);}}
+ #titlebar{height:46px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 14px;background:#171a21;border-bottom:1px solid rgba(0,0,0,.5);user-select:none;}
+ #titlebar .left{display:flex;align-items:center;gap:10px;}
+@@ -104,11 +104,11 @@ button{font-family:'Barlow',system-ui,sans-serif;cursor:pointer;border:none;back
+ .btn-row-reset{padding:6px 12px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#8f98a0;font-size:12px;font-weight:600;transition:border-color .15s,color .15s,background .15s;}
+ .btn-row-reset:hover{border-color:#66c0f4;color:#66c0f4;background:rgba(102,192,244,.06);}
+ .combo-wrap{position:relative;}
+-.combo-toggle{width:100%;background:#101925;border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#fff;font-size:13.5px;font-family:'Barlow',system-ui,sans-serif;padding:9px 12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;}
++.combo-toggle{width:100%;background:#101925;border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#fff;font-size:13.5px;font-family:'Barlow','Microsoft YaHei UI','Noto Sans SC',system-ui,sans-serif;padding:9px 12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+ .combo-toggle:hover{border-color:#66c0f4;}
+ .combo-toggle .chev{color:#5c6b78;font-size:11px;flex:none;}
+ .combo-panel{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#101925;border:1px solid rgba(102,192,244,.3);border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.45);padding:10px;z-index:20;}
+-.combo-search{width:100%;box-sizing:border-box;background:#0b131c;border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#fff;font-size:13px;font-family:'Barlow',system-ui,sans-serif;padding:8px 10px;}
++.combo-search{width:100%;box-sizing:border-box;background:#0b131c;border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#fff;font-size:13px;font-family:'Barlow','Microsoft YaHei UI','Noto Sans SC',system-ui,sans-serif;padding:8px 10px;}
+ .combo-search:focus{outline:none;border-color:#66c0f4;}
+ .combo-section-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:#5c6b78;font-weight:600;margin:10px 2px 6px;}
+ .combo-list{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
+@@ -124,7 +124,7 @@ button{font-family:'Barlow',system-ui,sans-serif;cursor:pointer;border:none;back
+ .combo-back:hover{color:#66c0f4;}
+ .combo-item .exe{display:block;font-size:11px;color:#5c6b78;margin-top:2px;}
+ .mode-row{padding-top:14px;padding-bottom:14px;}
+-.mode-select{background:#101925;border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#fff;font-size:13px;font-family:'Barlow',system-ui,sans-serif;padding:7px 10px;font-weight:600;cursor:pointer;flex:none;min-width:215px;}
++.mode-select{background:#101925;border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#fff;font-size:13px;font-family:'Barlow','Microsoft YaHei UI','Noto Sans SC',system-ui,sans-serif;padding:7px 10px;font-weight:600;cursor:pointer;flex:none;min-width:215px;}
+ .mode-select:hover{border-color:#66c0f4;}
+ .mode-select:focus{outline:none;border-color:#66c0f4;}
+ .speed-wrap{display:flex;align-items:center;gap:10px;flex:none;min-width:215px;}
+@@ -217,79 +217,79 @@ R"HTML(
+   <div class="left">
+     <div class="glyph"><div class="glyph-dot"></div></div>
+     <span class="tb-title">SteamlessController</span>
+-    <span class="tb-sub">&#8212; Customize Controls</span>
++    <span class="tb-sub">&#8212; 自定义控制</span>
+   </div>
+   <div class="winctls">
+-    <button class="winctl" id="btn-min" title="Minimize">&#8211;</button>
+-    <button class="winctl close" id="btn-close" title="Close">&#10005;</button>
++    <button class="winctl" id="btn-min" title="最小化">&#8211;</button>
++    <button class="winctl close" id="btn-close" title="关闭">&#10005;</button>
+   </div>
+ </div>
+ 
+ <div id="body">
+   <div>
+-    <h2>Customize Controls</h2>
+-    <p class="instr">Click <b>Rebind</b> on any button, then press any gamepad button on your controller &#8212; or any key on your keyboard, or your mouse's middle or thumb buttons. The new binding shows up here instantly. Pick <b>Off</b> to stop a button doing anything at all.</p>
++    <h2>自定义控制</h2>
++    <p class="instr">点任意按钮上的 <b>重新绑定</b>，然后按手柄上的任意键 —— 也可以按键盘任意键，或用鼠标中键 / 侧键。新绑定会立刻显示在这里。选 <b>关闭</b> 可以让这个按钮彻底不起作用。</p>
+   </div>
+   <div class="offbar" id="offbar">
+     <div class="offbar-text" id="offbar-text"></div>
+-    <button class="offbar-btn" id="offbar-btn">Enable</button>
++    <button class="offbar-btn" id="offbar-btn">启用</button>
+   </div>
+   <div class="group">
+-    <div class="group-label">APPLY TO</div>
++    <div class="group-label">应用到</div>
+     <div class="combo-wrap">
+       <button class="combo-toggle" id="combo-toggle">
+-        <span id="combo-current">Default (all other games)</span>
++        <span id="combo-current">默认（其他所有游戏）</span>
+         <span class="chev">&#9660;</span>
+       </button>
+       <div class="combo-panel" id="combo-panel" style="display:none;">
+-        <input class="combo-search" id="combo-search" type="text" placeholder="Search for a game or app..." autocomplete="off">
++        <input class="combo-search" id="combo-search" type="text" placeholder="搜索游戏或程序…" autocomplete="off">
+         <div id="combo-results"></div>
+         <div class="combo-add" id="combo-add">
+-          <div class="combo-add-item" onclick="askRunningApps()">&#43;&nbsp; Add an app that&#39;s running now&#8230;</div>
+-          <div class="combo-add-item" onclick="askBrowseExe()">&#43;&nbsp; Browse for a program&#8230;</div>
++          <div class="combo-add-item" onclick="askRunningApps()">&#43;&nbsp; 添加正在运行的程序…</div>
++          <div class="combo-add-item" onclick="askBrowseExe()">&#43;&nbsp; 浏览选择程序…</div>
+         </div>
+       </div>
+     </div>
+-    <div class="missing-note" id="missing-note" style="display:none;">This game wasn't found on this PC. Its profile is kept, and will start working again if the game comes back. Delete this if the game won't be coming back.</div>
++    <div class="missing-note" id="missing-note" style="display:none;">在这台电脑上没找到这个游戏。它的配置会保留，等游戏回来时会重新生效。如果游戏不会再回来，可以删掉这条。</div>
+   </div>
+   <div class="group" id="inherit-group" style="display:none;">
+-    <div class="group-label">MAPPINGS</div>
++    <div class="group-label">映射</div>
+     <div class="inherit-row">
+       <input type="checkbox" id="use-default">
+-      <label for="use-default">Use my default mappings</label>
++      <label for="use-default">使用我的默认映射</label>
+     </div>
+-    <div class="inherit-note">This game turns the controller on and uses the controls from your default profile, including any later changes to it. Uncheck to give this game controls of its own.</div>
++    <div class="inherit-note">这个游戏会启用手柄，并使用你默认配置里的控制方式，包括之后对默认配置的改动。取消勾选可让这个游戏使用自己的控制方式。</div>
+   </div>
+   <div id="settings">
+   <div class="group">
+-    <div class="group-label">CONTROLLER PLATFORM</div>
++    <div class="group-label">手柄平台</div>
+     <div class="row mode-row">
+       <div class="row-top">
+-        <span class="pos-label">Appear to games as</span>
++        <span class="pos-label">对游戏显示为</span>
+         <div class="connector"></div>
+         <select id="platform" class="mode-select"></select>
+       </div>
+     </div>
+   </div>
+   <div class="group">
+-    <div class="group-label">LEFT TRACKPAD</div>
++    <div class="group-label">左触控板</div>
+     <div class="row mode-row">
+       <div class="row-top">
+-        <span class="pos-label">Movement Mode</span>
++        <span class="pos-label">移动模式</span>
+         <div class="connector"></div>
+         <select id="mode-LPAD" class="mode-select"></select>
+       </div>
+     </div>
+     <div class="row mode-row" id="dir-row-LPAD">
+       <div class="row-top">
+-        <span class="pos-label">Scroll Direction</span>
++        <span class="pos-label">滚动方向</span>
+         <div class="connector"></div>
+         <select id="dir-LPAD" class="mode-select"></select>
+       </div>
+     </div>
+     <div class="row mode-row" id="speed-row-LPAD">
+       <div class="row-top">
+-        <span class="pos-label">Scroll Speed</span>
++        <span class="pos-label">滚动速度</span>
+         <div class="connector"></div>
+         <div class="speed-wrap">
+           <input type="range" id="speed-LPAD" class="speed-slider">
+@@ -299,12 +299,12 @@ R"HTML(
+     </div>
+     <div class="row mode-row" id="diag-row-LPAD">
+       <div class="row-top">
+-        <span class="pos-label">Diagonals</span>
++        <span class="pos-label">斜向</span>
+         <div class="connector"></div>
+         <select id="diag-LPAD" class="mode-select"></select>
+       </div>
+     </div>
+-    <div class="pad-note" id="note-LPAD">Press the outer part of the pad for a direction, or the middle for the trackpad click.</div>
++    <div class="pad-note" id="note-LPAD">按触控板外圈是方向，按中间是触控板点击。</div>
+     <div id="row-LPADup" class="row"></div>
+     <div id="row-LPADdown" class="row"></div>
+     <div id="row-LPADleft" class="row"></div>
+@@ -313,24 +313,24 @@ R"HTML(
+     <div id="row-LPADtouch" class="row"></div>
+   </div>
+   <div class="group">
+-    <div class="group-label">RIGHT TRACKPAD</div>
++    <div class="group-label">右触控板</div>
+     <div class="row mode-row">
+       <div class="row-top">
+-        <span class="pos-label">Movement Mode</span>
++        <span class="pos-label">移动模式</span>
+         <div class="connector"></div>
+         <select id="mode-RPAD" class="mode-select"></select>
+       </div>
+     </div>
+     <div class="row mode-row" id="dir-row-RPAD">
+       <div class="row-top">
+-        <span class="pos-label">Scroll Direction</span>
++        <span class="pos-label">滚动方向</span>
+         <div class="connector"></div>
+         <select id="dir-RPAD" class="mode-select"></select>
+       </div>
+     </div>
+     <div class="row mode-row" id="speed-row-RPAD">
+       <div class="row-top">
+-        <span class="pos-label">Scroll Speed</span>
++        <span class="pos-label">滚动速度</span>
+         <div class="connector"></div>
+         <div class="speed-wrap">
+           <input type="range" id="speed-RPAD" class="speed-slider">
+@@ -340,12 +340,12 @@ R"HTML(
+     </div>
+     <div class="row mode-row" id="diag-row-RPAD">
+       <div class="row-top">
+-        <span class="pos-label">Diagonals</span>
++        <span class="pos-label">斜向</span>
+         <div class="connector"></div>
+         <select id="diag-RPAD" class="mode-select"></select>
+       </div>
+     </div>
+-    <div class="pad-note" id="note-RPAD">Press the outer part of the pad for a direction, or the middle for the trackpad click.</div>
++    <div class="pad-note" id="note-RPAD">按触控板外圈是方向，按中间是触控板点击。</div>
+     <div id="row-RPADup" class="row"></div>
+     <div id="row-RPADdown" class="row"></div>
+     <div id="row-RPADleft" class="row"></div>
+@@ -354,80 +354,80 @@ R"HTML(
+     <div id="row-RPADtouch" class="row"></div>
+   </div>
+   <div class="group">
+-    <div class="group-label">LEFT TRIGGER</div>
++    <div class="group-label">左扳机</div>
+     <div class="row mode-row">
+       <div class="row-top">
+-        <span class="pos-label">Trigger Mode</span>
++        <span class="pos-label">扳机模式</span>
+         <div class="connector"></div>
+         <select id="tmode-LT" class="mode-select"></select>
+       </div>
+     </div>
+     <div class="row mode-row" id="meter-row-LT">
+       <div class="row-top">
+-        <span class="pos-label">Full-Press Point</span>
++        <span class="pos-label">全按触发点</span>
+         <div class="connector"></div>
+         <div class="meter-wrap">
+           <div class="meter" id="meter-LT">
+             <div class="meter-band" id="band-LT"></div>
+             <div class="meter-fill" id="fill-LT"></div>
+-            <div class="meter-mark press" id="mark-press-LT" tabindex="0" role="slider" aria-label="Left trigger full-press point"></div>
+-            <div class="meter-mark rel" id="mark-rel-LT" tabindex="0" role="slider" aria-label="Left trigger release point"></div>
++            <div class="meter-mark press" id="mark-press-LT" tabindex="0" role="slider" aria-label="左扳机全按触发点"></div>
++            <div class="meter-mark rel" id="mark-rel-LT" tabindex="0" role="slider" aria-label="左扳机回弹点"></div>
+           </div>
+           <span class="meter-val" id="meter-val-LT"></span>
+         </div>
+       </div>
+-      <div class="meter-help" id="meter-help-LT"><span>Pull the trigger to watch it. Drag the <b>bright marker</b> to set where the full press happens and the dim one to set where it lets go. The analog pull still reaches the game while the full press is held.</span><button class="btn-row-reset" id="meter-reset-LT">Reset</button></div>
++      <div class="meter-help" id="meter-help-LT"><span>扣下扳机可以看到指示。拖动 <b>亮色标记</b> 设置全按触发的位置，拖动暗色标记设置松开的位置。全按保持期间，模拟量仍会传给游戏。</span><button class="btn-row-reset" id="meter-reset-LT">重置</button></div>
+     </div>
+     <div id="row-LTfull" class="row"></div>
+     <div class="row mode-row" id="haptic-row-LT">
+       <div class="row-top">
+-        <span class="pos-label">Click Feel</span>
++        <span class="pos-label">点击手感</span>
+         <div class="connector"></div>
+         <select id="thaptic-LT" class="mode-select"></select>
+       </div>
+     </div>
+   </div>
+   <div class="group">
+-    <div class="group-label">RIGHT TRIGGER</div>
++    <div class="group-label">右扳机</div>
+     <div class="row mode-row">
+       <div class="row-top">
+-        <span class="pos-label">Trigger Mode</span>
++        <span class="pos-label">扳机模式</span>
+         <div class="connector"></div>
+         <select id="tmode-RT" class="mode-select"></select>
+       </div>
+     </div>
+     <div class="row mode-row" id="meter-row-RT">
+       <div class="row-top">
+-        <span class="pos-label">Full-Press Point</span>
++        <span class="pos-label">全按触发点</span>
+         <div class="connector"></div>
+         <div class="meter-wrap">
+           <div class="meter" id="meter-RT">
+             <div class="meter-band" id="band-RT"></div>
+             <div class="meter-fill" id="fill-RT"></div>
+-            <div class="meter-mark press" id="mark-press-RT" tabindex="0" role="slider" aria-label="Right trigger full-press point"></div>
+-            <div class="meter-mark rel" id="mark-rel-RT" tabindex="0" role="slider" aria-label="Right trigger release point"></div>
++            <div class="meter-mark press" id="mark-press-RT" tabindex="0" role="slider" aria-label="右扳机全按触发点"></div>
++            <div class="meter-mark rel" id="mark-rel-RT" tabindex="0" role="slider" aria-label="右扳机回弹点"></div>
+           </div>
+           <span class="meter-val" id="meter-val-RT"></span>
+         </div>
+       </div>
+-      <div class="meter-help" id="meter-help-RT"><span>Pull the trigger to watch it. Drag the <b>bright marker</b> to set where the full press happens and the dim one to set where it lets go. The analog pull still reaches the game while the full press is held.</span><button class="btn-row-reset" id="meter-reset-RT">Reset</button></div>
++      <div class="meter-help" id="meter-help-RT"><span>扣下扳机可以看到指示。拖动 <b>亮色标记</b> 设置全按触发的位置，拖动暗色标记设置松开的位置。全按保持期间，模拟量仍会传给游戏。</span><button class="btn-row-reset" id="meter-reset-RT">重置</button></div>
+     </div>
+     <div id="row-RTfull" class="row"></div>
+     <div class="row mode-row" id="haptic-row-RT">
+       <div class="row-top">
+-        <span class="pos-label">Click Feel</span>
++        <span class="pos-label">点击手感</span>
+         <div class="connector"></div>
+         <select id="thaptic-RT" class="mode-select"></select>
+       </div>
+     </div>
+   </div>
+   <div class="group">
+-    <div class="group-label">LEFT GRIP</div>
++    <div class="group-label">左握把</div>
+     <div id="row-L4" class="row"></div>
+     <div id="row-L5" class="row"></div>
+   </div>
+   <div class="group">
+-    <div class="group-label">RIGHT GRIP</div>
++    <div class="group-label">右握把</div>
+     <div id="row-R4" class="row"></div>
+     <div id="row-R5" class="row"></div>
+   </div>
+@@ -436,21 +436,21 @@ R"HTML(
+ 
+ <div id="footer">
+   <div class="footer-right">
+-    <button class="btn-reset" id="btn-reset">Reset this profile to default</button>
+-    <button class="btn-apply" id="btn-apply">Apply</button>
++    <button class="btn-reset" id="btn-reset">把此配置恢复为默认</button>
++    <button class="btn-apply" id="btn-apply">应用</button>
+   </div>
+-  <button class="btn-delete" id="btn-delete" style="display:none;">Delete Profile</button>
++  <button class="btn-delete" id="btn-delete" style="display:none;">删除配置</button>
+ </div>
+ 
+ <div id="modal-backdrop" style="display:none;">
+   <div class="modal">
+-    <h3 id="modal-title">Unsaved changes</h3>
+-    <p id="modal-text">You have unsaved changes to this profile.</p>
++    <h3 id="modal-title">未保存的更改</h3>
++    <p id="modal-text">此配置有未保存的更改。</p>
+     <div class="modal-btns">
+-      <button class="btn-modal-cancel" id="btn-modal-cancel">Cancel</button>
+-      <button class="btn-discard" id="btn-modal-discard">Discard</button>
+-      <button class="btn-save" id="btn-modal-save">Save</button>
+-      <button class="btn-modal-delete" id="btn-modal-delete" style="display:none;">Delete</button>
++      <button class="btn-modal-cancel" id="btn-modal-cancel">取消</button>
++      <button class="btn-discard" id="btn-modal-discard">放弃</button>
++      <button class="btn-save" id="btn-modal-save">保存</button>
++      <button class="btn-modal-delete" id="btn-modal-delete" style="display:none;">删除</button>
+     </div>
+   </div>
+ </div>
+@@ -528,26 +528,26 @@ var useDefault = false;
+ // re-labels the moment the platform dropdown above it changes.
+ function modeOptions(){
+   return [
+-    {id:'none',    label:'None'},
+-    {id:'pointer', label:'Mouse Pointer'},
+-    {id:'scroll',  label:'Scroll Wheel'},
+-    {id:'ds4',     label:platform==='ps'?'DS4 Touchpad'
+-                                        :'DS4 Touchpad (PlayStation only)'},
+-    {id:'dpad',    label:'Directional Pad'},
+-    {id:'button',  label:'Single Button'},
++    {id:'none',    label:'无'},
++    {id:'pointer', label:'鼠标指针'},
++    {id:'scroll',  label:'滚轮'},
++    {id:'ds4',     label:platform==='ps'?'DS4 触控板'
++                                        :'DS4 触控板（仅 PlayStation）'},
++    {id:'dpad',    label:'方向键'},
++    {id:'button',  label:'单按钮'},
+   ];
+ }
+ var DIR_OPTIONS = [
+-  {id:'natural',  label:'Natural'},
+-  {id:'reversed', label:'Reversed'},
++  {id:'natural',  label:'自然'},
++  {id:'reversed', label:'反向'},
+ ];
+ var DIAG_OPTIONS = [
+-  {id:'eight', label:'8-way (press two at once)'},
+-  {id:'four',  label:'4-way (one at a time)'},
++  {id:'eight', label:'八向（可同时按两个）'},
++  {id:'four',  label:'四向（一次一个）'},
+ ];
+ var PLATFORM_OPTIONS = [
+-  {id:'xbox', label:'Xbox Controller'},
+-  {id:'ps',   label:'PlayStation Controller'},
++  {id:'xbox', label:'Xbox 手柄'},
++  {id:'ps',   label:'PlayStation 手柄'},
+ ];
+ var listening = null;
+ // Modifier bits, matching BackButtonBinding::Modifier.
+@@ -626,29 +626,29 @@ var pendingAction = null;
+ 
+ // ---- Input catalog (Steam Controller nomenclature) ----
+ var INPUTS = [
+-  {id:'A',         glyph:'A',      label:'A Button',    bg:'#5ba32b',fg:'#fff'},
+-  {id:'B',         glyph:'B',      label:'B Button',    bg:'#c0392b',fg:'#fff'},
++  {id:'A',         glyph:'A',      label:'A 键',    bg:'#5ba32b',fg:'#fff'},
++  {id:'B',         glyph:'B',      label:'B 键',    bg:'#c0392b',fg:'#fff'},
+   {id:'X',         glyph:'X',      label:'X Button',    bg:'#2b7fc0',fg:'#fff'},
+   {id:'Y',         glyph:'Y',      label:'Y Button',    bg:'#c9a227',fg:'#211a04'},
+-  {id:'LB',        glyph:'L1',     label:'L1 Bumper',   bg:'#37485a',fg:'#cdd9e3'},
+-  {id:'LT',        glyph:'L2',     label:'L2 Trigger',  bg:'#37485a',fg:'#cdd9e3'},
+-  {id:'RB',        glyph:'R1',     label:'R1 Bumper',   bg:'#37485a',fg:'#cdd9e3'},
+-  {id:'RT',        glyph:'R2',     label:'R2 Trigger',  bg:'#37485a',fg:'#cdd9e3'},
+-  {id:'Up',        glyph:'&#x2191;', label:'D-Pad Up',    bg:'#2a3f57',fg:'#cdd9e3'},
+-  {id:'Down',      glyph:'&#x2193;', label:'D-Pad Down',  bg:'#2a3f57',fg:'#cdd9e3'},
+-  {id:'Left',      glyph:'&#x2190;', label:'D-Pad Left',  bg:'#2a3f57',fg:'#cdd9e3'},
+-  {id:'Right',     glyph:'&#x2192;', label:'D-Pad Right', bg:'#2a3f57',fg:'#cdd9e3'},
+-  {id:'leftMouse', glyph:'LMB',     label:'Left Click',  bg:'#3a2a5a',fg:'#c9b8f0'},
+-  {id:'rightMouse',glyph:'RMB',     label:'Right Click', bg:'#3a2a5a',fg:'#c9b8f0'},
+-  {id:'mouse:middle',glyph:'MMB',   label:'Middle Click',bg:'#3a2a5a',fg:'#c9b8f0'},
+-  {id:'mouse:x1',  glyph:'M4',      label:'Mouse 4',     bg:'#3a2a5a',fg:'#c9b8f0'},
+-  {id:'mouse:x2',  glyph:'M5',      label:'Mouse 5',     bg:'#3a2a5a',fg:'#c9b8f0'},
+-  {id:'menu',      glyph:'MNU',     label:'Menu',        bg:'#2a3a2a',fg:'#9ac89a'},
+-  {id:'view',      glyph:'VEW',     label:'View',        bg:'#2a3a2a',fg:'#9ac89a'},
+-  {id:'L3',        glyph:'L3',      label:'L3 Stick',    bg:'#37485a',fg:'#cdd9e3'},
+-  {id:'R3',        glyph:'R3',      label:'R3 Stick',    bg:'#37485a',fg:'#cdd9e3'},
+-  {id:'touchKeyboard',glyph:'KBD',  label:'Touch Keyboard',bg:'#2a3a2a',fg:'#9ac89a'},
+-  {id:'none',      glyph:'OFF',     label:'Off',         bg:'#1e2d3d',fg:'#5a7a9a'},
++  {id:'LB',        glyph:'L1',     label:'L1 肩键',   bg:'#37485a',fg:'#cdd9e3'},
++  {id:'LT',        glyph:'L2',     label:'L2 扳机',  bg:'#37485a',fg:'#cdd9e3'},
++  {id:'RB',        glyph:'R1',     label:'R1 肩键',   bg:'#37485a',fg:'#cdd9e3'},
++  {id:'RT',        glyph:'R2',     label:'R2 扳机',  bg:'#37485a',fg:'#cdd9e3'},
++  {id:'Up',        glyph:'&#x2191;', label:'方向键 上',    bg:'#2a3f57',fg:'#cdd9e3'},
++  {id:'Down',      glyph:'&#x2193;', label:'方向键 下',  bg:'#2a3f57',fg:'#cdd9e3'},
++  {id:'Left',      glyph:'&#x2190;', label:'方向键 左',  bg:'#2a3f57',fg:'#cdd9e3'},
++  {id:'Right',     glyph:'&#x2192;', label:'方向键 右', bg:'#2a3f57',fg:'#cdd9e3'},
++  {id:'leftMouse', glyph:'LMB',     label:'鼠标左键',  bg:'#3a2a5a',fg:'#c9b8f0'},
++  {id:'rightMouse',glyph:'RMB',     label:'鼠标右键', bg:'#3a2a5a',fg:'#c9b8f0'},
++  {id:'mouse:middle',glyph:'MMB',   label:'鼠标中键',bg:'#3a2a5a',fg:'#c9b8f0'},
++  {id:'mouse:x1',  glyph:'M4',      label:'鼠标 4 键',     bg:'#3a2a5a',fg:'#c9b8f0'},
++  {id:'mouse:x2',  glyph:'M5',      label:'鼠标 5 键',     bg:'#3a2a5a',fg:'#c9b8f0'},
++  {id:'menu',      glyph:'MNU',     label:'菜单键',        bg:'#2a3a2a',fg:'#9ac89a'},
++  {id:'view',      glyph:'VEW',     label:'视图键',        bg:'#2a3a2a',fg:'#9ac89a'},
++  {id:'L3',        glyph:'L3',      label:'L3 摇杆按下',    bg:'#37485a',fg:'#cdd9e3'},
++  {id:'R3',        glyph:'R3',      label:'R3 摇杆按下',    bg:'#37485a',fg:'#cdd9e3'},
++  {id:'touchKeyboard',glyph:'KBD',  label:'屏幕键盘',bg:'#2a3a2a',fg:'#9ac89a'},
++  {id:'none',      glyph:'OFF',     label:'关闭',         bg:'#1e2d3d',fg:'#5a7a9a'},
+ ];
+ var byId = {};
+ INPUTS.forEach(function(t){byId[t.id]=t;});
+@@ -866,9 +866,9 @@ function resetDefaults(){
+ function applyBindings(){
+   clearTimeout(applyTimer);
+   var btn=document.getElementById('btn-apply');
+-  btn.textContent='Applied \u2713';
++  btn.textContent='已应用 \u2713';
+   btn.disabled=true;
+-  applyTimer=setTimeout(function(){btn.textContent='Apply';btn.disabled=false;},1500);
++  applyTimer=setTimeout(function(){btn.textContent='应用';btn.disabled=false;},1500);
+   saveCurrent();
+ }
+ // Flatten the live editor state into the stored/wire profile shape.
+@@ -957,15 +957,15 @@ function showModal(mode,title,text){
+ function guard(action){
+   if(!isDirty()){action();return;}
+   pendingAction=action;
+-  var name=currentGame===''?'the default profile':(gameName(currentGame)||'this game');
+-  showModal('unsaved','Unsaved changes',
+-            'You have unsaved changes to '+name+'. Save them before continuing?');
++  var name=currentGame===''?'默认配置':(gameName(currentGame)||'此游戏');
++  showModal('unsaved','未保存的更改',
++            '以下内容有未保存的改动：'+name+'。继续前要先保存吗？');
+ }
+ function confirmRemove(){
+   if(currentGame==='') return;  // the default profile is not removable
+-  showModal('delete','Delete this profile?',
+-            'The profile for '+(gameName(currentGame)||'this game')+
+-            ' will be deleted. It will go back to default behavior.');
++  showModal('delete','删除这个配置？',
++            '配置 "'+(gameName(currentGame)||'此游戏')+
++            '" 将被删除，并恢复为默认行为。');
+ }
+ function resolveModal(choice){
+   document.getElementById('modal-backdrop').style.display='none';
+@@ -1006,7 +1006,7 @@ function gameName(gameId){
+   return '';
+ }
+ function currentLabel(){
+-  return currentGame===''?'Default (all other games)':(gameName(currentGame)||'Unknown game');
++  return currentGame===''?'默认（其他所有游戏）':(gameName(currentGame)||'未知游戏');
+ }
+ function renderComboLabel(){
+   document.getElementById('combo-current').textContent=currentLabel();
+@@ -1036,12 +1036,12 @@ function renderCombo(){
+ 
+   var pinned=pinnedGames();
+   if(q) pinned=pinned.filter(function(g){return g.name.toLowerCase().indexOf(q)>=0;});
+-  var showDefault=!q||'default (all other games)'.indexOf(q)>=0;
++  var showDefault=!q||'默认（其他所有游戏）'.indexOf(q)>=0;
+ 
+   if(showDefault||pinned.length){
+-    html+='<div class="combo-section-label">PROFILES</div><div class="combo-list">';
++    html+='<div class="combo-section-label">配置</div><div class="combo-list">';
+     if(showDefault)
+-      html+=itemHTML('','Default (all other games)');
++      html+=itemHTML('','默认（其他所有游戏）');
+     pinned.forEach(function(g){html+=itemHTML(g.id,g.name,g.missing==='1');});
+     html+='</div>';
+   }
+@@ -1053,7 +1053,7 @@ function renderCombo(){
+       return !pinnedIds[g.id]&&g.name.toLowerCase().indexOf(q)>=0;
+     }).slice(0,50);  // a two-letter query can match hundreds; cap the DOM work
+     if(matches.length){
+-      html+='<div class="combo-section-label">FOUND ON THIS PC</div><div class="combo-list">';
++      html+='<div class="combo-section-label">本机已找到</div><div class="combo-list">';
+       matches.forEach(function(g){html+=itemHTML(g.id,g.name,g.missing==='1');});
+       html+='</div>';
+     } else if(!pinned.length&&!showDefault){
+@@ -1061,11 +1061,11 @@ function renderCombo(){
+       // below the results are what answers it, so say so rather than leaving
+       // them at a dead end.
+       html+='<div class="combo-empty">'+(gamesPending
+-        ?'Still looking for your games&#8230;'
+-        :'Nothing matches "'+escapeHTML(comboQuery)+'".<br>Add it yourself below.')+'</div>';
++        ?'还在查找你的游戏…'
++        :'没有匹配 "'+escapeHTML(comboQuery)+'" 的结果。<br>可以在下面自己添加。')+'</div>';
+     }
+   } else if(gamesPending){
+-    html+='<div class="combo-note">Looking for your games&#8230;</div>';
++    html+='<div class="combo-note">正在查找你的游戏&#8230;</div>';
+   }
+ 
+   results.innerHTML=html;
+@@ -1074,10 +1074,10 @@ function renderCombo(){
+ // user wants a profile for is very often the one they just alt-tabbed out of,
+ // and this asks them to know nothing about where it was installed.
+ function runningHTML(){
+-  var html='<div class="combo-back" onclick="closeRunning()">&#8592; Back</div>'
+-          +'<div class="combo-section-label">RUNNING NOW</div>';
++  var html='<div class="combo-back" onclick="closeRunning()">&#8592; 返回</div>'
++          +'<div class="combo-section-label">正在运行</div>';
+   if(!RUNNING.length)
+-    return html+'<div class="combo-empty">Nothing else is running that we can see.</div>';
++    return html+'<div class="combo-empty">没有看到其他正在运行的程序。</div>';
+   html+='<div class="combo-list">';
+   RUNNING.forEach(function(a){
+     // The executable name is shown as well as the friendly one: two windows
+@@ -1089,7 +1089,7 @@ function runningHTML(){
+ }
+ function itemHTML(id,name,missing){
+   var cls='combo-item'+(id===currentGame?' active':'');
+-  var badge=missing?'<span class="combo-badge">NOT INSTALLED</span>':'';
++  var badge=missing?'<span class="combo-badge">未安装</span>':'';
+   return '<div class="'+cls+'" onclick="pickGame(\''+id+'\')">'+escapeHTML(name)+badge+'</div>';
+ }
+ function askRunningApps(){ postMsg({type:'listRunning'}); }
+@@ -1185,16 +1185,16 @@ function renderOffbar(){
+   // saves on its own — and it does not; Apply does. A banner about one thing
+   // being off is the wrong place to imply something else is automatic.
+   if(controlManual){
+-    text.innerHTML='<b>Steamless mode is off.</b> Nothing on this page is '+
+-                   'driving your controller yet - the trackpads, paddles '+
+-                   'and buttons below take effect once it is on.';
++    text.innerHTML='<b>Steamless 模式已关闭。</b> 本页设置'+
++                   '目前都不会作用到手柄 —— 触控板、背键'+
++                   '和按钮要等它开启后才生效。';
+     if(btn) btn.style.display='';
+   }else{
+     // Not ours to switch on: an auto mode owns the decision, and a button here
+     // would either lie or fight it a moment later.
+-    text.innerHTML='<b>Steamless mode is off right now.</b> Control Mode is set '+
+-                   'to one of the automatic options, so it turns on by itself '+
+-                   'when the conditions are met. Settings below take effect then.';
++    text.innerHTML='<b>Steamless 模式当前是关闭的。</b> 控制模式设成了'+
++                   '自动选项，满足条件时它会自己开启。'+
++                   '届时下面的设置才会生效。';
+     if(btn) btn.style.display='none';
+   }
+ }
+@@ -1287,7 +1287,7 @@ function renderRow(def){
+   var rightHTML;
+   if(isL){
+     rightHTML='<div class="listen-right">'+
+-      '<span class="listen-pill"><span class="pulse-dot"></span>Press a button, key, or mouse button...</span>'+
++      '<span class="listen-pill"><span class="pulse-dot"></span>请按手柄按键、键盘按键或鼠标键…</span>'+
+       '<button class="btn-row-reset" onclick="resetRow(\''+def.id+'\')">Reset</button>'+
+       '<button class="btn-cancel" onclick="cancelListening()">&#10005;</button>'+
+       '</div>';
+@@ -1315,13 +1315,13 @@ function renderRow(def){
+         'onclick="toggleMod('+m.bit+')">'+m.label+'</button>';
+     }).join('');
+     pickerHTML='<div class="picker">'+
+-      '<div class="picker-label">HOLD WITH THE KEY(S)</div>'+
++      '<div class="picker-label">同时按住这些键</div>'+
+       '<div class="picker-row" style="margin-top:9px;">'+modPills+'</div>'+
+       (sasWarning
+-        ? '<div class="mod-note">Windows reserves Ctrl + Alt + Delete for itself &#8212; '
+-          + 'no application can send it, so it cannot be bound here.</div>'
+-        : '<div class="mod-note">Pick modifiers, then press the key.</div>')+
+-      '<div class="picker-label" style="margin-top:14px;">OR PICK MANUALLY</div>'+
++        ? '<div class="mod-note">Ctrl + Alt + Delete 是 Windows 自己保留的 —— '
++          + '任何程序都无法发送它，所以这里绑不了。</div>'
++        : '<div class="mod-note">先选修饰键，再按键。</div>')+
++      '<div class="picker-label" style="margin-top:14px;">或手动选择</div>'+
+       '<div class="picker-rows">'+pickerRows+'</div></div>';
+   }
+   el.innerHTML='<div class="row-top">'+
+@@ -1511,13 +1511,13 @@ var TRIGGER_RAW_MAX=32767;
+ var TRIGGER_DEFAULT={mode:'standard',press:95,release:80,haptic:'both'};
+ var TRIGGER_PRESS_MIN=20, TRIGGER_PRESS_MAX=100, TRIGGER_RELEASE_MIN=5, TRIGGER_GAP=3;
+ var TRIGGER_MODE_OPTIONS=[
+-  {id:'standard', label:'Standard (analog only)'},
+-  {id:'dual',     label:'Dual Stage (adds a full-press button)'},
++  {id:'standard', label:'标准（仅模拟量）'},
++  {id:'dual',     label:'双段（增加全按按钮）'},
+ ];
+ var TRIGGER_HAPTIC_OPTIONS=[
+-  {id:'off',   label:'Off'},
+-  {id:'press', label:'Click on press'},
+-  {id:'both',  label:'Click on press and release'},
++  {id:'off',   label:'关闭'},
++  {id:'press', label:'按下时点击'},
++  {id:'both',  label:'按下和松开时点击'},
+ ];
+ // The full press is an ordinary rebindable row, so it rides the same capture
+ // flow, picker and profile plumbing as a paddle.
+@@ -2052,7 +2052,7 @@ void RemapWindow::BrowseForExe() {
+ 
+     COMDLG_FILTERSPEC filter[] = { { L"Programs", L"*.exe" } };
+     dialog->SetFileTypes(ARRAYSIZE(filter), filter);
+-    dialog->SetTitle(L"Pick the program to make a profile for");
++    dialog->SetTitle(L"选择要为其创建配置的程序");
+ 
+     // Where games are, far more often than the last folder the user happened
+     // to open something from.
+@@ -2080,9 +2080,9 @@ void RemapWindow::BrowseForExe() {
+     // to do with playing a game.
+     if (GameLibrary::IsSystemProgram(exePath)) {
+         MessageBoxW(m_hwnd,
+-            L"That program is part of Windows itself.\n\n"
+-            L"Pick a game or application you installed instead.",
+-            L"Not a game", MB_OK | MB_ICONINFORMATION);
++            L"这个程序本身属于 Windows。\n\n"
++            L"改从已安装的游戏或程序中选择。",
++            L"不是游戏", MB_OK | MB_ICONINFORMATION);
+         return;
+     }
+ 
+@@ -2200,9 +2200,9 @@ void RemapWindow::Open(HINSTANCE hInst, ControllerManager* mgr,
+     WCHAR* versionStr = nullptr;
+     if (FAILED(GetAvailableCoreWebView2BrowserVersionString(nullptr, &versionStr)) || !versionStr) {
+         MessageBoxW(nullptr,
+-            L"Back Button Remapping requires the Microsoft Edge WebView2 Runtime.\n\n"
+-            L"Please update Windows or download the runtime from microsoft.com/edge/webview2.",
+-            L"WebView2 Runtime Not Found", MB_OK | MB_ICONINFORMATION);
++            L"背键重映射需要 Microsoft Edge WebView2 Runtime。\n\n"
++            L"请更新 Windows，或从 microsoft.com/edge/webview2 下载运行时。",
++            L"未找到 WebView2 运行时", MB_OK | MB_ICONINFORMATION);
+         return;
+     }
+     CoTaskMemFree(versionStr);
+@@ -2248,7 +2248,7 @@ void RemapWindow::Open(HINSTANCE hInst, ControllerManager* mgr,
+     GetMonitorInfoW(MonitorFromPoint(cursor, MONITOR_DEFAULTTONEAREST), &mi);
+ 
+     m_hwnd = CreateWindowExW(
+-        0, CLASS_NAME, L"Customize Controls",
++        0, CLASS_NAME, L"自定义控制",
+         WS_POPUP | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX,
+         mi.rcWork.left, mi.rcWork.top, WINDOW_W, WINDOW_H,
+         nullptr, nullptr, hInst, nullptr);
+diff --git a/src/app/TrayApp.cpp b/src/app/TrayApp.cpp
+index f730017..e6f2b4b 100644
+--- a/src/app/TrayApp.cpp
++++ b/src/app/TrayApp.cpp
+@@ -319,9 +319,9 @@ LRESULT TrayApp::HandleMessage(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
+             // that has gone quiet and stays quiet is otherwise indisting-
+             // uishable from the app having broken.
+             if (m_gameProfiles.empty() && m_notificationsEnabled)
+-                ShowAlertBalloon(L"No game profiles yet",
+-                                 L"The controller stays in its own keyboard/mouse mode "
+-                                 L"until you add a profile for a game in Customize Controls.",
++                ShowAlertBalloon(L"还没有游戏配置",
++                                 L"手柄会一直保持自己的键鼠模式，"
++                                 L"直到你在「自定义控制」里为某个游戏添加配置。",
+                                  BalloonAction::None, NIIF_INFO);
+             break;
+         case IDM_STARTUP:
+@@ -414,7 +414,7 @@ LRESULT TrayApp::HandleMessage(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
+             // the selected profile again — and the rebuild that costs is free
+             // now in a way it never is while the game is up.
+             if (!m_platformHold.StillRunning())
+-                ReleasePlatformHold(L"the game exited");
++                ReleasePlatformHold(L"游戏已退出");
+         } else if (wp == IDT_STEAM_RECONCILE) {
+             // The watcher announces an edge exactly once, through one
+             // PostMessage. If that message is lost the app keeps a stale view
+@@ -696,7 +696,7 @@ bool TrayApp::SelectProfile(const std::wstring& gameId) {
+ 
+     m_activeGameId = gameId;
+     EventLog::Write("PROFILE: switched to %ls",
+-                    gameId.empty() ? L"the default profile" : gameId.c_str());
++                    gameId.empty() ? L"默认配置" : gameId.c_str());
+     return true;
+ }
+ 
+@@ -718,12 +718,12 @@ void TrayApp::PushActiveProfile() {
+     // line per alt-tab would bury everything else.
+     const bool following = !m_activeGameId.empty()
+                         && ActiveProfile().useDefaultMappings;
+-    std::wstring applying = (m_activeGameId.empty() ? std::wstring(L"the default profile")
++    std::wstring applying = (m_activeGameId.empty() ? std::wstring(L"默认配置")
+                                                     : m_activeGameId)
+                           + (applied.platform == ControllerPlatform::PlayStation
+                                  ? L" [PlayStation]" : L" [Xbox]")
+-                          + (following ? L" (following the default — its own bindings are"
+-                                         L" not being used)"
++                          + (following ? L"（跟随默认配置 —— 它自己的绑定"
++                                         L"没有被使用）"
+                                        : L"");
+     if (applying != m_lastAppliedDescription) {
+         m_lastAppliedDescription = applying;
+@@ -750,8 +750,8 @@ void TrayApp::PushActiveProfile() {
+     // stored; an exe path is poor prose but it still identifies the game.
+     const std::wstring& name = profile.displayName.empty() ? m_activeGameId
+                                                            : profile.displayName;
+-    ShowAlertBalloon(L"Custom controls loaded",
+-                     L"Custom controller profile for " + name + L" loaded.",
++    ShowAlertBalloon(L"自定义控制已加载",
++                     L"已加载自定义手柄配置：" + name + L"。",
+                      BalloonAction::None, NIIF_INFO);
+ }
+ 
+@@ -1255,7 +1255,7 @@ void TrayApp::ReportAcquireFailure() {
+         EventLog::Write("ACQUIRE: giving up — another process holds the device "
+                         "(veto=%s holders=%ls)",
+                         DeviceRestart::VetoTypeName(st.vetoType),
+-                        st.holders.empty() ? L"(none identified)" : st.holders.c_str());
++                        st.holders.empty() ? L"（无法确定）" : st.holders.c_str());
+         if (!m_notificationsEnabled) return;
+         std::wstring text;
+         // A replug is worth offering: Windows will not take the device down
+@@ -1263,19 +1263,17 @@ void TrayApp::ReportAcquireFailure() {
+         // cable is a surprise removal that no software veto can stop.
+         if (!st.holders.empty())
+             text = st.holders
+-                 + L" has the controller open, and Windows will not restart the "
+-                   L"device while it is held. Close it, or unplug and replug the "
+-                   L"controller.";
++                 + L" 占用了手柄，Windows 无法重启该"
++                   L"设备。请关闭它，或拔插一次手柄。";
+         else if (st.VetoNamesTheHolder())
+             text = L"\"" + st.vetoName
+-                 + L"\" has the controller open, and Windows will not restart the "
+-                   L"device while it is held. Close it, or unplug and replug the "
+-                   L"controller.";
++                 + L"\" 占用了手柄，Windows 无法重启该"
++                   L"设备。请关闭它，或拔插一次手柄。";
+         else
+-            text = L"Another program has the controller open, and Windows will not "
+-                   L"restart the device while it is held. Close any other controller "
+-                   L"tools, or unplug and replug the controller.";
+-        ShowAlertBalloon(L"Could not take the controller", text);
++            text = L"另一个程序占用了手柄，Windows 无法"
++                   L"重启该设备。请关闭其他手柄工具，"
++                   L"或拔插一次手柄。";
++        ShowAlertBalloon(L"无法接管手柄", text);
+         return;
+     }
+ 
+@@ -1283,18 +1281,18 @@ void TrayApp::ReportAcquireFailure() {
+         EventLog::Write("ACQUIRE: giving up — the cycle never took the device down (%s err=%lu)",
+                         DeviceRestart::CycleKindName(st.kind), st.error);
+         if (m_notificationsEnabled)
+-            ShowAlertBalloon(L"Could not take the controller",
+-                             L"Windows would not restart the controller device, so it "
+-                             L"could not be taken from Steam. Unplugging and replugging "
+-                             L"it will hand it over.");
++            ShowAlertBalloon(L"无法接管手柄",
++                             L"Windows 无法重启手柄设备，所以没能"
++                             L"从 Steam 那里接管。拔插一次手柄就能"
++                             L"把它交过来。");
+         return;
+     }
+ 
+     EventLog::Write("ACQUIRE: giving up after %d device cycles", MAX_ACQUIRE_CYCLES);
+     if (m_notificationsEnabled)
+-        ShowAlertBalloon(L"Could not take the controller",
+-                         L"Steam is holding the controller and did not release it. "
+-                         L"Closing Steam will hand it back.");
++        ShowAlertBalloon(L"无法接管手柄",
++                         L"Steam 仍占用着手柄，没有释放。"
++                         L"关闭 Steam 就能把手柄交回来。");
+ }
+ 
+ bool TrayApp::RunPendingRecovery() {
+@@ -1302,7 +1300,7 @@ bool TrayApp::RunPendingRecovery() {
+         std::wstring report;
+         const int recovered = DeviceRestart::ReconcilePendingDisables(&report);
+         EventLog::Write("RECOVER: %ls (%d devnode(s) re-enabled)",
+-                        report.empty() ? L"nothing was still disabled" : report.c_str(),
++                        report.empty() ? L"没有任何设备仍处于禁用状态" : report.c_str(),
+                         recovered);
+         return true;
+     }
+@@ -1377,10 +1375,10 @@ void TrayApp::RecoverStrandedDevices() {
+                             "or with: pnputil /enable-device \"%ls\"",
+                             m_disabledDeviceNode.c_str());
+             if (m_notificationsEnabled)
+-                ShowAlertBalloon(L"Controller is disabled in Windows",
+-                                 L"Windows has this controller's device switched off, so "
+-                                 L"nothing can see it — including Steam. Click here to "
+-                                 L"re-enable it.",
++                ShowAlertBalloon(L"手柄在 Windows 中被禁用",
++                                 L"Windows 把这只手柄的设备关掉了，所以"
++                                 L"连 Steam 也看不到它。点这里"
++                                 L"重新启用。",
+                                  BalloonAction::EnableDisabledDevice);
+         }
+         return;
+@@ -1418,10 +1416,10 @@ void TrayApp::EnableDisabledControllerDevice() {
+     if (!RunPendingRecovery()) {
+         EventLog::Write("USER: could not run the elevated helper to re-enable the device");
+         if (m_notificationsEnabled)
+-            ShowAlertBalloon(L"Could not re-enable the controller",
+-                             L"Windows would not let the device be switched back on from "
+-                             L"here. Re-enable it in Device Manager, under Human Interface "
+-                             L"Devices.");
++            ShowAlertBalloon(L"无法重新启用手柄",
++                             L"Windows 不允许从这里把设备重新打开，"
++                             L"请在设备管理器的「人机接口设备」下"
++                             L"手动启用。");
+         return;
+     }
+     m_disabledDeviceNode.clear();
+@@ -1549,10 +1547,10 @@ void TrayApp::ShowElevationBalloon() {
+     nid.uID         = TRAY_UID;
+     nid.uFlags      = NIF_INFO;
+     nid.dwInfoFlags = NIIF_WARNING;
+-    wcscpy_s(nid.szInfoTitle, L"One-time setup needed");
++    wcscpy_s(nid.szInfoTitle, L"需要一次性设置");
+     wcscpy_s(nid.szInfo,
+-             L"Approve the administrator prompt to enable in-game controller "
+-             L"handoff (select the mode again to retry).");
++             L"请在弹出的管理员提示中确认，以启用游戏内"
++             L"手柄交接（可重新选择该模式再试一次）。");
+     Shell_NotifyIconW(NIM_MODIFY, &nid);
+ }
+ 
+@@ -1606,7 +1604,7 @@ void TrayApp::OpenRemapWindow() {
+             // type it was holding — which would otherwise outlive it for as
+             // long as its game kept running, with nothing left to explain it.
+             if (m_platformHold.IsHeld() && m_platformHold.ProfileId() == gameId)
+-                ReleasePlatformHold(L"its profile was deleted");
++                ReleasePlatformHold(L"它的配置已被删除");
+             // No control decision here, for the same reason applying makes
+             // none: the window is open and may have a row listening for a
+             // button, and dropping the controller under it would end that
+@@ -1660,11 +1658,11 @@ void TrayApp::UpdateTrayIcon(bool connected, bool gameModeActive, bool sharedHan
+ 
+     // Fall through rather than returning early — the icon and tooltip still need
+     // to track the controller while the driver is unavailable.
+-    const wchar_t* tip = shared          ? L"Steamless Controller — Steamless Mode ON (sharing with Steam)"
+-                       : gameModeActive  ? L"Steamless Controller — Steamless Mode ON"
+-                       : padUnavailable  ? L"Steamless Controller — no virtual gamepad bus"
+-                       : connected       ? L"Steamless Controller — Connected (Steamless Mode OFF)"
+-                                         : L"Steamless Controller — No controller found";
++    const wchar_t* tip = shared          ? L"Steamless Controller — Steamless 模式已开启（与 Steam 共享）"
++                       : gameModeActive  ? L"Steamless Controller — Steamless 模式已开启"
++                       : padUnavailable  ? L"Steamless Controller — 没有虚拟手柄总线"
++                       : connected       ? L"Steamless Controller — 已连接（Steamless 模式关闭）"
++                                         : L"Steamless Controller — 未找到手柄";
+ 
+     NOTIFYICONDATAW nid{};
+     nid.cbSize = sizeof(nid);
+@@ -1737,14 +1735,14 @@ void TrayApp::ShowViGEmBalloon() {
+     nid.uID              = TRAY_UID;
+     nid.uFlags           = NIF_INFO;
+     nid.dwInfoFlags      = NIIF_WARNING;
+-    wcscpy_s(nid.szInfoTitle, missing ? L"Driver required" : L"Virtual gamepad unavailable");
++    wcscpy_s(nid.szInfoTitle, missing ? L"需要驱动" : L"虚拟手柄不可用");
+     wcscpy_s(nid.szInfo,
+              missing
+-                 ? L"ViGEmBus is unavailable — not installed, or disabled in Device "
+-                   L"Manager under System devices. Click here to download it."
+-                 : L"A virtual gamepad bus is present but would not accept a "
+-                   L"controller. It may be disabled, or a version this app cannot "
+-                   L"talk to. The event log has the details.");
++                 ? L"ViGEmBus 不可用 —— 可能没安装，或在设备管理器的"
++                   L"「系统设备」下被禁用了。点这里下载。"
++                 : L"存在虚拟手柄总线，但它不接受"
++                   L"手柄。它可能被禁用，或是本程序无法通信的"
++                   L"版本。详情见事件日志。");
+     Shell_NotifyIconW(NIM_MODIFY, &nid);
+ }
+ 
+@@ -2137,7 +2135,7 @@ void TrayApp::ShowContextMenu() {
+     m_disabledDeviceNode = DeviceRestart::FindDisabledControllerNode();
+     if (!m_disabledDeviceNode.empty()) {
+         AppendMenuW(menu, MF_STRING, IDM_ENABLE_DEVICE,
+-                    L"Re-enable Controller Device (disabled in Windows)");
++                    L"重新启用手柄设备（在 Windows 中被禁用）");
+         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+     }
+ 
+@@ -2148,12 +2146,12 @@ void TrayApp::ShowContextMenu() {
+     // acquiring can spend several seconds cycling the device, and during that
+     // window the toggle's job is to offer a cancel.
+     const bool toggleOn = manual ? m_wantControl : gameModeOn;
+-    std::wstring toggleLabel = toggleOn ? L"Disable Steamless Mode"
+-                                        : L"Enable Steamless Mode";
++    std::wstring toggleLabel = toggleOn ? L"关闭 Steamless 模式"
++                                        : L"开启 Steamless 模式";
+     if (!connected)
+-        toggleLabel += L" (no controller detected)";
++        toggleLabel += L"（未检测到手柄）";
+     else if (!manual)
+-        toggleLabel += L" (managed by Auto Mode)";
++        toggleLabel += L"（由自动模式管理）";
+     UINT toggleFlags = MF_STRING | ((connected && manual) ? MF_ENABLED : MF_GRAYED);
+     AppendMenuW(menu, toggleFlags, IDM_TOGGLE, toggleLabel.c_str());
+ 
+@@ -2161,13 +2159,13 @@ void TrayApp::ShowContextMenu() {
+     AppendMenuW(modeMenu, MF_STRING | (manual ? MF_CHECKED : MF_UNCHECKED),
+                 IDM_MODE_MANUAL, L"Manual");
+     AppendMenuW(modeMenu, MF_STRING | (m_autoMode == AutoMode::OffWhileSteam ? MF_CHECKED : MF_UNCHECKED),
+-                IDM_MODE_STEAM, L"Auto - Off while Steam running");
++                IDM_MODE_STEAM, L"自动 - Steam 运行时关闭");
+     AppendMenuW(modeMenu, MF_STRING | (m_autoMode == AutoMode::OffOnlyInGame ? MF_CHECKED : MF_UNCHECKED),
+-                IDM_MODE_GAME, L"Auto - Off ONLY while in Steam game");
++                IDM_MODE_GAME, L"自动 - 仅在 Steam 游戏中关闭");
+     AppendMenuW(modeMenu, MF_STRING | (m_autoMode == AutoMode::OffUnlessProfile ? MF_CHECKED : MF_UNCHECKED),
+-                IDM_MODE_PROFILE, L"Auto - Off unless a game profile is running");
++                IDM_MODE_PROFILE, L"自动 - 没有游戏配置运行时关闭");
+     AppendMenuW(menu, MF_STRING | MF_POPUP,
+-                reinterpret_cast<UINT_PTR>(modeMenu), L"Control Mode");
++                reinterpret_cast<UINT_PTR>(modeMenu), L"控制模式");
+ 
+     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+ 
+@@ -2175,12 +2173,12 @@ void TrayApp::ShowContextMenu() {
+     // which kind of pad the game sees — is configured in one window now, per
+     // profile. This menu used to carry three separate entries for pieces of
+     // that, none of which could be set per game.
+-    AppendMenuW(menu, MF_STRING, IDM_REMAP_BACK, L"Customize Controls...");
++    AppendMenuW(menu, MF_STRING, IDM_REMAP_BACK, L"自定义控制...");
+ 
+     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+ 
+     AppendMenuW(menu, MF_STRING | (startupOn ? MF_CHECKED : MF_UNCHECKED),
+-                IDM_STARTUP, L"Start with Windows");
++                IDM_STARTUP, L"开机启动");
+ 
+     // Meaningless outside Manual mode — the auto modes never make an "at
+     // launch" decision, they resolve control from Steam/game state on every
+@@ -2188,12 +2186,12 @@ void TrayApp::ShowContextMenu() {
+     // sitting grayed out with nothing to explain.
+     if (manual)
+         AppendMenuW(menu, MF_STRING | (m_enableOnLaunch ? MF_CHECKED : MF_UNCHECKED),
+-                    IDM_ENABLE_ON_LAUNCH, L"Enable on Launch");
++                    IDM_ENABLE_ON_LAUNCH, L"启动时启用");
+ 
+     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+-    AppendMenuW(menu, MF_STRING, IDM_OPENLOG, L"Open Event Log");
++    AppendMenuW(menu, MF_STRING, IDM_OPENLOG, L"打开事件日志");
+     AppendMenuW(menu, MF_STRING | (m_notificationsEnabled ? MF_CHECKED : MF_UNCHECKED),
+-                IDM_NOTIFICATIONS, L"Show Notifications");
++                IDM_NOTIFICATIONS, L"显示通知");
+     AppendMenuW(menu, MF_STRING, IDM_EXIT, L"Exit");
+ 
+     // SetForegroundWindow is required for the menu to dismiss on click-away.

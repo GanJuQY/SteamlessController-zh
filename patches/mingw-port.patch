@@ -1,0 +1,158 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8412ffc..88940ba 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -262,13 +262,12 @@ target_include_directories(SteamlessController PRIVATE
+ target_link_libraries(SteamlessController PRIVATE
+     SteamController
+     ViGEmClient
+-    ${webview2_SOURCE_DIR}/build/native/${WV2_ARCH}/WebView2LoaderStatic.lib
++    ${webview2_SOURCE_DIR}/build/native/${WV2_ARCH}/WebView2Loader.dll.lib
+     version
+     ole32
+     shell32
+     shlwapi
+     cfgmgr32
+-    windowsapp
+ )
+ if (MSVC)
+     target_compile_options(SteamlessController PRIVATE /W4 /WX /utf-8 /wd4828)
+diff --git a/src/app/GameLibrary.cpp b/src/app/GameLibrary.cpp
+index b1465f0..f09fc45 100644
+--- a/src/app/GameLibrary.cpp
++++ b/src/app/GameLibrary.cpp
+@@ -6,10 +6,13 @@
+ #include <shlobj.h>
+ #include <shlwapi.h>
+ #include <wrl/client.h>
++#ifdef _MSC_VER
++// C++/WinRT 只存在于 MSVC 工具链；MinGW 交叉编译版没有它（见下面 EnumeratePackagedApps 的兜底）
+ #include <winrt/Windows.ApplicationModel.h>
+ #include <winrt/Windows.ApplicationModel.Core.h>
+ #include <winrt/Windows.Foundation.Collections.h>
+ #include <winrt/Windows.Management.Deployment.h>
++#endif
+ #include <algorithm>
+ #include <cstdio>
+ #include <cwctype>
+@@ -196,6 +199,7 @@ std::wstring NameFromShortcutPath(const std::wstring& shortcutPath) {
+ // That filtering is left to the user picking from the list, same as
+ // everywhere else in this file.
+ std::vector<InstalledGame> EnumeratePackagedApps() {
++#ifdef _MSC_VER
+     std::vector<InstalledGame> games;
+ 
+     try {
+@@ -223,6 +227,11 @@ std::vector<InstalledGame> EnumeratePackagedApps() {
+     }
+ 
+     return games;
++#else
++    // MinGW 交叉编译：没有 C++/WinRT，这一路（微软商店/MSIX 游戏枚举）直接返回空，
++    // 选择器会退回 Start Menu 扫描的结果。功能损失仅此一处。
++    return {};
++#endif
+ }
+ 
+ // Lowercased, with a trailing separator, so a prefix test cannot match a
+diff --git a/src/app/RemapWindow.cpp b/src/app/RemapWindow.cpp
+index 5b69c57..679c69e 100644
+--- a/src/app/RemapWindow.cpp
++++ b/src/app/RemapWindow.cpp
+@@ -15,6 +15,96 @@
+ #include <cstring>
+ #include <cstdlib>
+ 
++#ifndef _MSC_VER
++// ---------------------------------------------------------------------------
++// MinGW 交叉编译垫片（官方 MSVC 构建完全不经过这里）
++//
++// mingw-w64 的 WRL 只有 client.h / internal.h / module.h，没有 MSVC 的
++// wrl/implements.h，所以 Microsoft::WRL::Callback 不存在，而本文件的 WebView2
++// 事件回调全靠 Callback<I>(lambda).Get()。下面补一个用法等价的最小实现。
++//
++// 另注：mingw 的 rpcndr.h 把 MIDL_INTERFACE(x) 展开成裸 struct，uuid 被丢掉，
++// 所以 __uuidof(这些接口) 链接不过（undefined reference to __mingw_uuidof<...>），
++// IID 只能照抄 WebView2.h 里 MIDL_INTERFACE 的字面量。
++// ---------------------------------------------------------------------------
++namespace Microsoft { namespace WRL {
++namespace zhmigw {
++
++inline const GUID kIidEnvCompleted = {0x4e8a3389, 0xc9d8, 0x4bd2, {0xb6, 0xb5, 0x12, 0x4f, 0xee, 0x6c, 0xc1, 0x4d}};
++inline const GUID kIidCtlCompleted = {0x6c4819f3, 0xc9b7, 0x4260, {0x81, 0x27, 0xc9, 0xf5, 0xbd, 0xe7, 0xf6, 0x8c}};
++inline const GUID kIidWebMessage   = {0x57213f19, 0x00e6, 0x49fa, {0x8e, 0x07, 0x89, 0x8e, 0xa0, 0x1e, 0xcb, 0xd2}};
++inline const GUID kIidNavCompleted = {0xd33a35bf, 0x1c49, 0x4f98, {0x93, 0xab, 0x00, 0x6e, 0x05, 0x33, 0xfe, 0x1c}};
++
++// 引用计数 + QueryInterface 的公共部分；接口实现本身交给下面的特化
++template <class I, class Fn>
++class Delegate : public I {
++public:
++    Delegate(const GUID& iid, Fn fn) : iid_(iid), fn_(std::move(fn)) {}
++
++    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppv) override {
++        if (!ppv) return E_POINTER;
++        if (riid == iid_ || riid == IID_IUnknown) {
++            *ppv = static_cast<I*>(this);
++            AddRef();
++            return S_OK;
++        }
++        *ppv = nullptr;
++        return E_NOINTERFACE;
++    }
++    ULONG STDMETHODCALLTYPE AddRef() override {
++        return static_cast<ULONG>(InterlockedIncrement(&refs_));
++    }
++    ULONG STDMETHODCALLTYPE Release() override {
++        LONG n = InterlockedDecrement(&refs_);
++        if (n == 0) { delete this; return 0; }
++        return static_cast<ULONG>(n);
++    }
++
++protected:
++    ~Delegate() = default;   // 只能经 Release 销毁
++    Fn fn_;
++private:
++    const GUID iid_;
++    LONG refs_ = 1;
++};
++
++template <class I, class Fn> class Handler;   // 按事件接口特化
++
++// 一个事件接口 = 一个特化：只把 Invoke 转给 lambda
++#define ZHMIGW_HANDLER(IFACE, IID, SIG, ARGS)                                  \
++    template <class Fn>                                                        \
++    class Handler<IFACE, Fn> : public Delegate<IFACE, Fn> {                    \
++    public:                                                                    \
++        explicit Handler(Fn fn) : Delegate<IFACE, Fn>(IID, std::move(fn)) {}   \
++        HRESULT STDMETHODCALLTYPE Invoke SIG override {                        \
++            return this->fn_ ARGS;                                             \
++        }                                                                      \
++    };
++
++ZHMIGW_HANDLER(ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler, kIidEnvCompleted,
++               (HRESULT errorCode, ICoreWebView2Environment* result), (errorCode, result))
++ZHMIGW_HANDLER(ICoreWebView2CreateCoreWebView2ControllerCompletedHandler, kIidCtlCompleted,
++               (HRESULT errorCode, ICoreWebView2Controller* result), (errorCode, result))
++ZHMIGW_HANDLER(ICoreWebView2WebMessageReceivedEventHandler, kIidWebMessage,
++               (ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args), (sender, args))
++ZHMIGW_HANDLER(ICoreWebView2NavigationCompletedEventHandler, kIidNavCompleted,
++               (ICoreWebView2* sender, ICoreWebView2NavigationCompletedEventArgs* args), (sender, args))
++
++#undef ZHMIGW_HANDLER
++
++}  // namespace zhmigw
++
++// 等价于 MSVC 的 Microsoft::WRL::Callback<I>(lambda)
++template <class I, class Fn>
++ComPtr<I> Callback(Fn fn) {
++    ComPtr<I> p;
++    p.Attach(static_cast<I*>(new zhmigw::Handler<I, Fn>(std::move(fn))));
++    return p;
++}
++
++}}  // namespace Microsoft::WRL
++#endif  // !_MSC_VER
++
+ RemapWindow* RemapWindow::s_instance = nullptr;
+ 
+ // Defined further down, alongside the rest of the page-message plumbing;
